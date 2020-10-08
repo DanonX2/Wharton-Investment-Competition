@@ -34,4 +34,4 @@ def getDERatio(bSheet):
 
 apple = getOverveiw("aapl")
 appleb = getBalanceSheet("aapl")
-print(getDERatio(appleb))
+print(appleb)
