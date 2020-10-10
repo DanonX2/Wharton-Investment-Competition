@@ -35,8 +35,8 @@ def getDERatio(bSheet):
     DERatio = totalLiabilities/totalEquity
     return DERatio
 
-def getPIRatio(cashFlow):
-    annualReports = [i for i in cashFlow["annualReports"]]
+def getPIRatio(symbol):
+    annualReports = [i for i in symbol[cashFlow["cashflow"]["annualReports"]]
     FCF = [0 for i in range(len(annualReports))]
     counter = 0
     for i in annualReports:
@@ -48,6 +48,11 @@ def getPIRatio(cashFlow):
         averageFCF+=i
         counter += 1
     averageFCF /= counter
+    growth = float(symbol["overview"]["PERatio"]) / float(symbol["overview"]["PEGRatio"])
+    totalEquity = float(symbol["balancesheet"]["quarterlyReports"][0]["totalShareholderEquity"])
+    value = (8.3459 * 1.07 ** growth) * averageFCF + totalEquity**0.8
+    price = symbol["daily"]["Time Series (Daily)"][]
+    PIRatio = float(symbol["overview"][""])
     return averageFCF
 
 apple = getOverveiw("aapl")
