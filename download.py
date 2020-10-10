@@ -1,6 +1,18 @@
 import requests
+import csv
+import time
 
 API_KEY = 'QASZNQL3PG5W135Z'
+stockList = "stockList.csv"
+
+def initList():
+    USList = []
+    with open(stockList, newline='') as file:
+        reader = [i for i in csv.DictReader(file)]
+        for i in reader:
+            if i['EXCHANGE'] == "New York Stock" or i['EXCHANGE'] == "Nasdaq":
+                USList.append(i["TICKER"])
+        print(USList)
 
 def getOverveiw(symbol):
     result = requests.get("https://www.alphavantage.co/query?function=OVERVIEW&symbol="+symbol+"&apikey=QASZNQL3PG5W135Z")
@@ -14,29 +26,18 @@ def getCashFlow(symbol):
     result = requests.get("https://www.alphavantage.co/query?function=CASH_FLOW&symbol="+symbol+"&apikey="+API_KEY)
     return result.json()
 
-def getPBRatio(overview):
-    return float(overview["PriceToBookRatio"])
+def getPrice(symbol):
+    result = requests.get("https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol="+symbol+"&apikey=" + API_KEY)
+    return result.json()
 
-def getProfitMargin(overview):
-    return float(overview["ProfitMargin"])
-
-def getPEGRatio(overview):
-    return float(overview["PEGRatio"])
-
-def getDividendYield(overview):
-    return float(overview["DividendYield"])
-
-def getReturnOnEquity(overview):
-    return float(overview["ReturnOnEquityTTM"])
-
-def getDERatio(bSheet):
-    totalLiabilities = float(bSheet["quarterlyReports"][0]["totalLiabilities"])
-    totalEquity = float(bSheet["quarterlyReports"][0]["totalShareholderEquity"])
+def getDERatio(stock):
+    totalLiabilities = float(stock.balancesheet["quarterlyReports"][0]["totalLiabilities"])
+    totalEquity = float(stock.balancesheet["quarterlyReports"][0]["totalShareholderEquity"])
     DERatio = totalLiabilities/totalEquity
     return DERatio
 
-def getPIRatio(symbol):
-    annualReports = [i for i in symbol[cashFlow["cashflow"]["annualReports"]]
+def getPIRatio(stock):
+    annualReports = [i for i in stock.cashflow["cashflow"]["annualReports"]]
     FCF = [0 for i in range(len(annualReports))]
     counter = 0
     for i in annualReports:
@@ -48,13 +49,40 @@ def getPIRatio(symbol):
         averageFCF+=i
         counter += 1
     averageFCF /= counter
-    growth = float(symbol["overview"]["PERatio"]) / float(symbol["overview"]["PEGRatio"])
-    totalEquity = float(symbol["balancesheet"]["quarterlyReports"][0]["totalShareholderEquity"])
+    growth = float(stock.overview["PERatio"]) / float(stock.overview["PEGRatio"])
+    totalEquity = float(stock.balancesheet["quarterlyReports"][0]["totalShareholderEquity"])
     value = (8.3459 * 1.07 ** growth) * averageFCF + totalEquity**0.8
-    price = symbol["daily"]["Time Series (Daily)"][]
-    PIRatio = float(symbol["overview"][""])
-    return averageFCF
+    price = float(stock.price["Global Quote"]["05. price"])
+    PIRatio = value / price
+    return PIRatio
 
-apple = getOverveiw("aapl")
-appleb = getBalanceSheet("aapl")
-print(getPIRatio(getCashFlow("aapl")))
+
+class stock():
+    def __init__(self,symbol):
+        self.overview = getOverveiw(symbol)
+        self.cashflow = getCashFlow(symbol)
+        self.balancesheet = getBalanceSheet(symbol)
+        self.price = getPrice(symbol)
+        self.PBRatio = float(self.overview["PriceToBookRatio"])
+        self.profitMargin = float(self.overview["ProfitMargin"])
+        self.PEGRatio = float(self.overview["PEGRatio"])
+        self.dividendyield = float(self.overview["DividendYield"])
+        self.returnOnEquity = float(self.overview["ReturnOnEquityTTM"])
+        self.DERatio = getDERatio(self)
+        self.PIRatio = getPIRatio(self)
+    def getInfo(self):
+        print("price: " + self.price + "\n")
+        print("PBRatio: " + self.PBRatio + "\n")
+        print("profitMargin: " + self.profitMargin + "\n")
+        print("PEGRatio: " + self.PEGRatio + "\n")
+        print("dividendyield: " + self.dividendyield + "\n")
+        print("returnOnEquity: " + self.returnOnEquity + "\n")
+        print("DERatio: " + self.DERatio + "\n")
+        print("PIRatio: " + self.PIRatio + "\n")
+    def getIndex(self):
+        index = 7 * 
+
+
+apple = stock("aapl")
+
+apple.getInfo()
