@@ -10,6 +10,10 @@ def getBalanceSheet(symbol):
     result = requests.get("https://www.alphavantage.co/query?function=BALANCE_SHEET&symbol="+symbol+"&apikey=QASZNQL3PG5W135Z")
     return result.json()
 
+def getCashFlow(symbol):
+    result = requests.get("https://www.alphavantage.co/query?function=CASH_FLOW&symbol="+symbol+"&apikey="+API_KEY)
+    return result.json()
+
 def getPBRatio(overview):
     return float(overview["PriceToBookRatio"])
 
@@ -31,7 +35,21 @@ def getDERatio(bSheet):
     DERatio = totalLiabilities/totalEquity
     return DERatio
 
+def getPIRatio(cashFlow):
+    annualReports = [i for i in cashFlow["annualReports"]]
+    FCF = [0 for i in range(len(annualReports))]
+    counter = 0
+    for i in annualReports:
+        FCF[counter] = float(i["operatingCashflow"]) - float(i["capitalExpenditures"])
+        counter += 1
+    averageFCF = 0
+    counter = 0
+    for i in FCF:
+        averageFCF+=i
+        counter += 1
+    averageFCF /= counter
+    return averageFCF
 
 apple = getOverveiw("aapl")
 appleb = getBalanceSheet("aapl")
-print(appleb)
+print(getPIRatio(getCashFlow("aapl")))
