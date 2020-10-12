@@ -1,7 +1,11 @@
 import csv
+def initList():
+    USList = []
+    with open("stockList.csv", newline='') as file:
+        reader = [i for i in csv.DictReader(file)]
+        for i in reader:
+            if i['EXCHANGE'] == "New York Stock" or i['EXCHANGE'] == "Nasdaq":
+                USList.append(i["TICKER"])
+        return USList
 
-with open('employee_file.csv', mode='w') as employee_file:
-    employee_writer = csv.writer(employee_file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-
-    employee_writer.writerow(['John Smith', 'Accounting', 'November'])
-    employee_writer.writerow(['Erica Meyers', 'IT', 'March'])
+print(initList())

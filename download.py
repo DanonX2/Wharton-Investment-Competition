@@ -15,11 +15,12 @@ def initList():
         return USList
 
 def getOverveiw(symbol):
-    result = requests.get("https://www.alphavantage.co/query?function=OVERVIEW&symbol="+symbol+"&apikey=QASZNQL3PG5W135Z")
-    return result.json()
+    result = "https://www.alphavantage.co/query?function=OVERVIEW&symbol="+symbol+"&apikey=S2AEUWYBR1CP7OX7"
+    result = requests.get(result).json()
+    return result
 
 def getBalanceSheet(symbol):
-    result = requests.get("https://www.alphavantage.co/query?function=BALANCE_SHEET&symbol="+symbol+"&apikey=QASZNQL3PG5W135Z")
+    result = requests.get("https://www.alphavantage.co/query?function=BALANCE_SHEET&symbol="+symbol+"&apikey=S2AEUWYBR1CP7OX7")
     return result.json()
 
 def getCashFlow(symbol):
@@ -61,7 +62,8 @@ class stock():
         self.balancesheet = getBalanceSheet(symbol)
         self.profitMargin = float(self.overview["ProfitMargin"])
         self.PBRatio = float(self.overview["PriceToBookRatio"])
-        self.PEGRatio = float(self.overview["PEGRatio"])
+        try:self.PEGRatio = float(self.overview["PEGRatio"])
+        except:self.PEGRatio = 1
         self.dividendyield = float(self.overview["DividendYield"])
         self.returnOnEquity = float(self.overview["ReturnOnEquityTTM"])
         try:self.DERatio = getDERatio(self)
@@ -91,7 +93,7 @@ with open('results.csv', 'w', newline='',buffering=1) as csvfile:
         writer.writerow(['Ticker', 'PBRatio','profitMargin','PEGRatio','dividendyield','returnonequity','DERatio','PIRatio','index'])
         csvfile.flush()
         print('output file set-up success')
-for i in USList[0:9]:
+for i in USList[-33:]:
     with open('results.csv', 'a', newline='',buffering=1) as csvfile:
         writer = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         success = False
@@ -101,6 +103,7 @@ for i in USList[0:9]:
                 success = True
             except:
                 time.sleep(1)
+                print("reached API Limit, retrying...")
         writer.writerow([i,Stocks[counter].PBRatio,Stocks[counter].profitMargin,Stocks[counter].PEGRatio,Stocks[counter].dividendyield,Stocks[counter].returnOnEquity,Stocks[counter].DERatio,Stocks[counter].PIRatio,Stocks[counter].index])
         csvfile.flush()
         counter += 1
