@@ -13,7 +13,11 @@ def initList():
             if i['EXCHANGE'] == "New York Stock" or i['EXCHANGE'] == "Nasdaq":
                 USList.append(i["TICKER"])
         return USList
-
+def getPrice(Symbol):
+    result = 'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol='+Symbol.ticker+'&apikey=S2AEUWYBR1CP7OX7'
+    result = requests.get(result).json()
+    result = float(result["Time Series (Daily)"]["2020-10-20"]["1. open"])
+    return result
 def getOverveiw(symbol):
     result = "https://www.alphavantage.co/query?function=OVERVIEW&symbol="+symbol+"&apikey=S2AEUWYBR1CP7OX7"
     result = requests.get(result).json()
@@ -51,12 +55,15 @@ def getPIRatio(stock):
     value = (8.3459 * 1.07 ** growth) * averageFCF + totalEquity**0.8
     shares = float(stock.overview["SharesOutstanding"])
     PIRatio = value / shares
+    PIRatio /= stock.price
     return PIRatio
 
 
 class stock():
     def __init__(self,symbol):
         self.status = False
+        self.ticker = symbol
+        self.price = getPrice(self)
         self.overview = getOverveiw(symbol)
         self.cashflow = getCashFlow(symbol)
         self.balancesheet = getBalanceSheet(symbol)
@@ -64,10 +71,11 @@ class stock():
         self.PBRatio = float(self.overview["PriceToBookRatio"])
         try:self.PEGRatio = float(self.overview["PEGRatio"])
         except:self.PEGRatio = 1
+        if self.PEGRatio == 0:self.PEGRatio = 1
         self.dividendyield = float(self.overview["DividendYield"])
         self.returnOnEquity = float(self.overview["ReturnOnEquityTTM"])
         try:self.DERatio = getDERatio(self)
-        except:self.DERatio = 0.2
+        except:self.DERatio = 1
         try:self.PIRatio = getPIRatio(self)
         except:self.PIRatio = 1
         self.index = self.getIndex()
@@ -81,8 +89,8 @@ class stock():
         print("PIRatio: " + self.PIRatio + "\n")
         print("index: " + self.index + "\n")
     def getIndex(self):
-        self.index = 1.015 ** self.PIRatio + 0.2 * self.DERatio + 0.2 *(1.01 ** self.PBRatio) + 0.3 * self.dividendyield + 0.5 * self.returnOnEquity + 0.4 * self.profitMargin + 0.6 * (1.01 ** self.PEGRatio)
-        self.index /= 2.2
+        self.index = 0.3 * self.PIRatio + 0.2 * self.DERatio + 0.2 * self.PBRatio + 0.3 * self.dividendyield + 0.5 * self.returnOnEquity + 0.4 * self.profitMargin + 0.6 * self.PEGRatio
+        self.index /= 2.5
         return self.index
 
 USList = initList()
@@ -93,18 +101,22 @@ with open('results.csv', 'w', newline='',buffering=1) as csvfile:
         writer.writerow(['Ticker', 'PBRatio','profitMargin','PEGRatio','dividendyield','returnonequity','DERatio','PIRatio','index'])
         csvfile.flush()
         print('output file set-up success')
-for i in USList[-33:]:
+for i in USList[0:]:
     with open('results.csv', 'a', newline='',buffering=1) as csvfile:
         writer = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         success = False
-        while success == False:
+        attempts = 0
+        while not success:
+            if attempts >= 5:break
             try:
                 Stocks.append(stock(i))
+                writer.writerow([i,Stocks[counter].PBRatio,Stocks[counter].profitMargin,Stocks[counter].PEGRatio,Stocks[counter].dividendyield,Stocks[counter].returnOnEquity,Stocks[counter].DERatio,Stocks[counter].PIRatio,Stocks[counter].index])
                 success = True
+                attempts = 0
             except:
                 time.sleep(1)
-                print("reached API Limit, retrying...")
-        writer.writerow([i,Stocks[counter].PBRatio,Stocks[counter].profitMargin,Stocks[counter].PEGRatio,Stocks[counter].dividendyield,Stocks[counter].returnOnEquity,Stocks[counter].DERatio,Stocks[counter].PIRatio,Stocks[counter].index])
+                attempts += 1
+                print("pulling data failed, retrying...")
         csvfile.flush()
         counter += 1
         print(i,"Done\n")
