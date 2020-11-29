@@ -96,13 +96,13 @@ class stock():
 USList = initList()
 Stocks = []
 counter = 0
-with open('results.csv', 'w', newline='',buffering=1) as csvfile:
+with open('new_results.csv', 'w', newline='',buffering=1) as csvfile:
         writer = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         writer.writerow(['Ticker', 'PBRatio','profitMargin','PEGRatio','dividendyield','returnonequity','DERatio','PIRatio','index'])
         csvfile.flush()
         print('output file set-up success')
 for i in USList[0:]:
-    with open('results.csv', 'a', newline='',buffering=1) as csvfile:
+    with open('new_results.csv', 'a', newline='',buffering=1) as csvfile:
         writer = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         success = False
         attempts = 0
